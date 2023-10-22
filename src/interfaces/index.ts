@@ -6,8 +6,8 @@ export enum IHumanSexCodes {
 }
 
 export enum IStatus {
-  inativo = 0,
-  ativo = 1,
+  "Inativo" = 0,
+  "Ativo" = 1,
 }
 
 export enum IMaritalStatus {
@@ -36,10 +36,17 @@ export interface IRole {
   department: IDepartment;
 }
 
+export interface IRoleDTO {
+  id: string;
+  name: string;
+  weeklyWorkload: number;
+  departmentId: string;
+}
+
 export interface IEmployee {
   cpf: string;
   name: string;
-  status: string;
+  status: number;
   dateOfBirth: string;
   email: string;
   phoneNumber: string;
@@ -49,13 +56,11 @@ export interface IEmployee {
   password: string;
   hourlyPayment: number;
   admissionDate: Date;
-  terminationDate?: Date;
+  terminationDate: Date | null;
   rg: string;
   nationality: string;
-  religion?: string;
   maritalStatus: IMaritalStatus;
   numberOfChildren: number;
-  partnerName?: string;
   bankName: string;
   accountNumber: string;
   agencyNumber: string;
@@ -64,6 +69,32 @@ export interface IEmployee {
   permition: IPermitions;
   roleId?: string;
   role: IRole;
+}
+
+export interface IEmployeeDTO {
+  cpf: string;
+  name: string;
+  status: IStatus;
+  dateOfBirth: string;
+  email: string;
+  phoneNumber: string;
+  cellNumber: string;
+  address: string;
+  sex: IHumanSexCodes;
+  password: string;
+  hourlyPayment: number;
+  admissionDate: Date;
+  terminationDate: Date | null;
+  rg: string;
+  nationality: string;
+  maritalStatus: IMaritalStatus;
+  numberOfChildren: number;
+  bankName: string;
+  accountNumber: string;
+  agencyNumber: string;
+  pixKey: string;
+  permitionId?: string;
+  roleId?: string;
 }
 
 export interface IPayslip {

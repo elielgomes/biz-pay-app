@@ -1,6 +1,7 @@
 import './globals.css'
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/contexts/AuthContext';
+import { Toaster } from '@/components/ui/toaster';
 
 export const metadata: Metadata = {
 	title: 'Create Next App',
@@ -16,7 +17,8 @@ export default function RootLayout({
 		<html lang="pt-br">
 			<body>
 				<AuthProvider>
-				{children}
+					{children}
+					<Toaster />
 				</AuthProvider>
 			</body>
 		</html>

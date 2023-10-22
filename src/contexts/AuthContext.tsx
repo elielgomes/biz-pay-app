@@ -5,7 +5,7 @@ import {
 	useState
 } from "react";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 import {
 	parseCookies,
@@ -34,25 +34,29 @@ export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 
 	const router = useRouter();
 	const [user, setUser] = useState<IUser | null>(null);
+	const pathName = usePathname();
 	const isAuthenticated = !!user;
 
 	useEffect(() => {
 		recoverUserInfo().then((user) => {
 			if (user) {
+				console.log("Usuario logado!");
 				setUser(user);
-				console.log("Usuario autenticado")
-				router.push("/dashboard");
+				if (pathName === "/") {
+					router.push("/dashboard");
+				};
+				
 			} else {
 				router.push("/");
 			}
 		}).catch(() => {
 			router.push("/");
 		})
-	}, [router]);
+	}, [pathName, router]);
 
 	const signIn = async ({ Email, Password }: ISignInData) => {
 		try {
-			const response = await api.authenticateUser({ Email, Password });
+			const response = await api.employee.authenticateUser({ Email, Password });
 			console.log(Email, Password)
 			setCookie(undefined, "bizpay.token", response.token, {
 				maxAge: 60 * 60 * 1, // Validade: 1 hora
@@ -66,8 +70,6 @@ export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 			axiosApi.defaults.headers['Authorization'] = `Bearer ${response.token}`;
 			router.push("/dashboard");
 		} catch (error) {
-			console.log(Email, Password)
-
 			console.log(error);
 			throw new Error("Acesso negado!");
 		}
@@ -83,7 +85,7 @@ export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 		const { "bizpay.token": token } = parseCookies();
 		if (token) {
 			try {
-				const response = await api.getUserByToken(token);
+				const response = await api.employee.getUserByToken(token);
 				const recoveryUser = {
 					email: response.email,
 					permition: response.permition,

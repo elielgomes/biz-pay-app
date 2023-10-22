@@ -9,11 +9,6 @@ interface IProps {
 
 type TLoginUserFormData = z.infer<typeof loginUserFormSchema>;
 
-// const loginUserFormSchema = z.object({
-// 	Email: z.string().min(1, { message: "E-mail é obrigatório!" }).email({ message: "E-mail inválido!" }),
-// 	Password: z.string().min(1, { message: "Senha é obrigatória!" }),
-// });
-
 const loginUserFormSchema = z.object({
 	Email: z.string(),
 	Password: z.string(),
