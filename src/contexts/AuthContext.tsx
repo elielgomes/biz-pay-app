@@ -2,10 +2,11 @@
 import {
 	createContext,
 	useEffect,
-	useState
+	useState,
+	useCallback,
 } from "react";
 
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useParams } from "next/navigation";
 
 import {
 	parseCookies,
@@ -16,14 +17,15 @@ import api from "@/api";
 
 import { axiosApi } from "@/services/api";
 
-import { IEmployee, ISignInData, IUser } from "@/interfaces";
+import { IEmployee, IPermitions, ISignInData } from "@/interfaces";
+import { toast } from "@/components/ui/use-toast";
 
 export interface IAuthProvider {
 	children: React.ReactNode;
 }
 
 export interface IAuthContext {
-	user: IUser | null;
+	user: IEmployee | null;
 	isAuthenticated: boolean;
 	signIn: ({ Email, Password }: ISignInData) => Promise<void>;
 	signOut: () => void;
@@ -33,45 +35,61 @@ export const AuthContext = createContext({} as IAuthContext);
 export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 
 	const router = useRouter();
-	const [user, setUser] = useState<IUser | null>(null);
+	const params = useParams();
+	const [user, setUser] = useState<IEmployee | null>(null);
 	const pathName = usePathname();
 	const isAuthenticated = !!user;
 
-	useEffect(() => {
-		recoverUserInfo().then((user) => {
-			if (user) {
-				console.log("Usuario logado!");
-				setUser(user);
-				if (pathName === "/") {
-					router.push("/dashboard");
-				};
-				
-			} else {
+	const validateRoutes = useCallback((user: IEmployee) => {
+		if (pathName === "/") {
+			router.push("/dashboard");
+		};
+
+		if (pathName === `/dashboard/perfil/detalhes/${params?.cpf}`
+			&& user.permitionId !== IPermitions.admin) {
+			router.push("/dashboard/perfil");
+		};
+
+	}, [pathName, router, params.cpf]);
+
+	const recoverUserInfo = useCallback(async () => {
+		const { "bizpay.token": token } = parseCookies();
+		if (token) {
+			try {
+				const user = await api.employee.getUserByToken(token);
+				if (user) {
+					setUser(user);
+					validateRoutes(user);
+				} else {
+					router.push("/");
+				}
+			} catch (error) {
 				router.push("/");
 			}
-		}).catch(() => {
-			router.push("/");
-		})
-	}, [pathName, router]);
+		}
+	}, [router, validateRoutes]);
+
+	useEffect(() => {
+		recoverUserInfo();
+	}, [recoverUserInfo]);
 
 	const signIn = async ({ Email, Password }: ISignInData) => {
 		try {
 			const response = await api.employee.authenticateUser({ Email, Password });
-			console.log(Email, Password)
 			setCookie(undefined, "bizpay.token", response.token, {
 				maxAge: 60 * 60 * 1, // Validade: 1 hora
 				//httpOnly: true,
 			});
-			const user = {
-				email: response.email,
-				permition: response.permition,
-			}
+			const user = await api.employee.getUserByToken(response.token);
 			setUser(user);
 			axiosApi.defaults.headers['Authorization'] = `Bearer ${response.token}`;
 			router.push("/dashboard");
-		} catch (error) {
-			console.log(error);
-			throw new Error("Acesso negado!");
+		} catch (error: any) {
+			toast({
+				variant: "error",
+				title: "Acesso negado!",
+				description: error.message ? error.message : "Usuário ou	senha incorretos.",
+			});
 		}
 	}
 
@@ -79,24 +97,6 @@ export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 		destroyCookie(undefined, 'bizpay.token');
 		router.push("/");
 		window.location.reload();
-	}
-
-	const recoverUserInfo = async () => {
-		const { "bizpay.token": token } = parseCookies();
-		if (token) {
-			try {
-				const response = await api.employee.getUserByToken(token);
-				const recoveryUser = {
-					email: response.email,
-					permition: response.permition,
-				}
-				return recoveryUser;
-			} catch (error) {
-				console.log(error)
-				throw new Error("Acesso negado!");
-			}
-		}
-		throw new Error("Acesso negado!");
 	}
 
 	return (

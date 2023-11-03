@@ -2,6 +2,15 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
+import { Roboto } from "next/font/google";
+import { Navbar } from '@/components/Navbar';
+import { usePathname } from 'next/navigation';
+
+const roboto = Roboto({
+	weight: ["100", '300', '400', '500', '700', '900'],
+	subsets: ['latin'],
+	style: 'normal',
+});
 
 export const metadata: Metadata = {
 	title: 'Create Next App',
@@ -15,7 +24,7 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="pt-br">
-			<body>
+			<body className={`${roboto.className} bg-slate-50`}>
 				<AuthProvider>
 					{children}
 					<Toaster />

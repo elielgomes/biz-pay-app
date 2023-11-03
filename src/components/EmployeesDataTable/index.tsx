@@ -4,6 +4,7 @@ import * as React from "react"
 import {
 	ColumnDef,
 	ColumnFiltersState,
+	Row,
 	SortingState,
 	VisibilityState,
 	flexRender,
@@ -12,8 +13,9 @@ import {
 	getPaginationRowModel,
 	getSortedRowModel,
 	useReactTable,
-} from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+} from "@tanstack/react-table";
+import Link from "next/link";
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -36,15 +38,21 @@ import {
 	TableRow,
 } from "@/components/ui/table"
 import { IEmployee, IEmployeeDTO, IStatus } from "@/interfaces"
-import api from "@/api"
-import { set } from "react-hook-form"
-import e from "express"
-import { get } from "http"
+import { IHandleEmployeeEdit, ModalCreateEmployee } from "@/components/Modal/ModalCreateEmployee"
+import { ICreateEmployee } from "@/app/dashboard/funcionarios/page"
+
+export interface IProps {
+	employees: IEmployee[];
+	updateEmployeeStatus: (employee: IEmployee) => void;
+	createEmployee: ({ employee, callBack }: ICreateEmployee) => void;
+	editEmployee: ({ employee, callBack }: ICreateEmployee) => void;
+}
 
 export const columns: ColumnDef<IEmployee>[] = [
 
 	{
-		id: "select",
+		id: "Select",
+		accessorKey: "select",
 		header: ({ table }) => (
 			<Checkbox
 				checked={table.getIsAllPageRowsSelected()}
@@ -57,6 +65,7 @@ export const columns: ColumnDef<IEmployee>[] = [
 				checked={row.getIsSelected()}
 				onCheckedChange={(value) => row.toggleSelected(!!value)}
 				aria-label="Select row"
+				value={row.original.cpf}
 			/>
 		),
 		enableSorting: false,
@@ -139,35 +148,22 @@ export const columns: ColumnDef<IEmployee>[] = [
 	},
 ];
 
-export const EmployeesDataTable: React.FC = () => {
+export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployeeStatus, editEmployee, createEmployee }) => {
 
-	const [sorting, setSorting] = React.useState<SortingState>([]);
+	const [sorting, setSorting] = React.useState<SortingState>([{ id: "Nome", desc: false }]);
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-	const [columnVisibility, setColumnVisibility] =
-		React.useState<VisibilityState>({});
+	const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
 	const [rowSelection, setRowSelection] = React.useState({});
-	const [data, setData] = React.useState<IEmployee[]>([]);
 	const [filtering, setFiltering] = React.useState<string>("");
 
-	const getAllEmployees = React.useCallback(async () => {
-		api.employee.getAllEmployees().then((data) => setData(data));
-	}, []);
-
-	const updateEmployeeStatus = React.useCallback(async (employee: IEmployee) => {
-		const { permition, role, status, ...employeeSpread } = employee;
-		const updatedEmployee: IEmployeeDTO = {
-			...employeeSpread,
-			status: IStatus[employee.status] == "Ativo" ? 0 : 1,
-		};
-		await api.employee.updateEmployee(updatedEmployee).then(() => getAllEmployees());
-	}, [getAllEmployees]);
+	const [modalOpen, setModalOpen] = React.useState<boolean>(false);
+	const [handleEditEmployee, setHandleEditEmployee] = React.useState<IHandleEmployeeEdit | undefined>(undefined);
 
 	React.useEffect(() => {
-		getAllEmployees();
-	}, [getAllEmployees]);
+	}, [employees]);
 
 	const table = useReactTable({
-		data,
+		data: employees,
 		columns,
 		onSortingChange: setSorting,
 		onColumnFiltersChange: setColumnFilters,
@@ -187,9 +183,35 @@ export const EmployeesDataTable: React.FC = () => {
 		},
 	})
 
+	const handleCreateOrEditEmployee = React.useCallback((employee?: IEmployeeDTO) => {
+		if (employee) {
+
+			setHandleEditEmployee({
+				modalTitle: "Editar funcionário",
+				employee: employee,
+				editEmployee: editEmployee,
+			});
+			setModalOpen(true);
+
+		} else {
+
+			setHandleEditEmployee(undefined);
+			setModalOpen(true);
+
+		}
+	}, [editEmployee]);
+
 	return (
 		<div className="w-full">
-			<div className="flex items-center py-4">
+
+			<ModalCreateEmployee
+				open={modalOpen}
+				handleEmployeeEdit={handleEditEmployee}
+				onOpenChange={() => modalOpen && setModalOpen(false)}
+				createEmployee={createEmployee}
+			/>
+
+			<div className="flex items-center py-4 justify-between">
 				<Input
 					autoFocus
 					autoComplete="off"
@@ -198,31 +220,39 @@ export const EmployeesDataTable: React.FC = () => {
 					onChange={(event) => setFiltering(event.target.value)}
 					className="max-w-sm"
 				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" className="ml-auto">
-							Exibir colunas <ChevronDown className="ml-2 h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						{table
-							.getAllColumns()
-							.filter((column) => column.getCanHide())
-							.map((column) => {
-								return (
-									<DropdownMenuCheckboxItem
-										key={column.id}
-										checked={column.getIsVisible()}
-										onCheckedChange={(value) =>
-											column.toggleVisibility(!!value)
-										}
-									>
-										{column.id}
-									</DropdownMenuCheckboxItem>
-								)
-							})}
-					</DropdownMenuContent>
-				</DropdownMenu>
+
+				<div className="flex gap-4">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" className="ml-auto">
+								Exibir colunas <ChevronDown className="ml-2 h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							{table
+								.getAllColumns()
+								.filter((column) => column.getCanHide())
+								.map((column) => {
+									return (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{column.id}
+										</DropdownMenuCheckboxItem>
+									)
+								})}
+						</DropdownMenuContent>
+					</DropdownMenu>
+
+					<Button onClick={() => handleCreateOrEditEmployee()} className="flex gap-2">
+						<Plus size={18} />	Criar funcionário
+					</Button>
+				</div>
+
 			</div>
 
 			<div className="rounded-md border">
@@ -272,20 +302,31 @@ export const EmployeesDataTable: React.FC = () => {
 											</DropdownMenuTrigger>
 											<DropdownMenuContent align="end">
 												<DropdownMenuLabel>Ações</DropdownMenuLabel>
-												<DropdownMenuItem
-													onClick={() => navigator.clipboard.writeText(row.original.cpf)}
-												>
-													Copy payment ID
+
+												<DropdownMenuItem onClick={() => navigator.clipboard.writeText(row.original.cpf)}>
+													Copiar CPF
 												</DropdownMenuItem>
+
 												<DropdownMenuSeparator />
-												<DropdownMenuItem>Editar informações</DropdownMenuItem>
+
 												<DropdownMenuItem onClick={() => updateEmployeeStatus(row.original)}>
 													<div className="flex gap-2 items-center">
 														{IStatus[row.original.status] == "Ativo" ? "Desativar" : "Ativar"}
 														<div className={`inline-block w-3 h-3 rounded-full ${IStatus[row.original.status] == "Ativo" ? "bg-red-500" : "bg-emerald-500"}`}></div>
 													</div>
 												</DropdownMenuItem>
-												<DropdownMenuItem>Ver detalhes</DropdownMenuItem>
+												
+												<DropdownMenuItem onClick={() => handleCreateOrEditEmployee(row.original)}>
+													Editar informações
+												</DropdownMenuItem>
+
+
+												<DropdownMenuItem>
+													<Link href={`/dashboard/perfil/detalhes/${row.original.cpf}`}>
+														Ver detalhes
+													</Link>
+												</DropdownMenuItem>
+
 											</DropdownMenuContent>
 										</DropdownMenu>
 									</TableCell>
@@ -306,6 +347,7 @@ export const EmployeesDataTable: React.FC = () => {
 
 				</Table>
 			</div>
+
 			<div className="flex items-center justify-end space-x-2 py-4">
 				<div className="flex-1 text-sm text-muted-foreground">
 					{table.getFilteredSelectedRowModel().rows.length} de{" "}
@@ -330,6 +372,7 @@ export const EmployeesDataTable: React.FC = () => {
 					</Button>
 				</div>
 			</div>
+
 		</div>
 	)
 }

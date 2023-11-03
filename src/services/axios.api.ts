@@ -3,6 +3,11 @@ import express from "express";
 import *  as cookie from "cookie";
 import { parseCookies } from "nookies";
 import { NextPageContext, NextApiRequest } from "next";
+import https from "https";
+
+const httpsAgent = new https.Agent({
+  rejectUnauthorized: false,
+});
 
 export const getAPIClient = (ctx?: Pick<NextPageContext, 'req'> | {
   req: NextApiRequest;
@@ -13,7 +18,8 @@ export const getAPIClient = (ctx?: Pick<NextPageContext, 'req'> | {
   const { "bizpay.token": token } = parseCookies(ctx);
 
   const api = axios.create({
-    baseURL: "https://localhost:7156/api"
+    baseURL: "https://localhost:7156/api",
+    httpsAgent,
   });
 
   if (token) {

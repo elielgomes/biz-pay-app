@@ -1,4 +1,4 @@
-export const nacionalities = [
+export const nationalities = [
   { label: "Afegã(o)", value: "Afegã(o)" },
   { label: "Africana(o) do Sul", value: "Africana(o) do Sul" },
   { label: "Alandesa(o)", value: "Alandesa(o)" },

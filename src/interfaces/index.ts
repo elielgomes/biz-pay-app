@@ -23,6 +23,11 @@ export enum IPermitions {
   admin = 2,
 }
 
+export interface IPermition {
+  id: IPermitions;
+  name: string;
+}
+
 export interface IDepartment {
   id: string;
   name: string;
@@ -46,28 +51,28 @@ export interface IRoleDTO {
 export interface IEmployee {
   cpf: string;
   name: string;
-  status: number;
-  dateOfBirth: string;
+  status: IStatus;
+  dateOfBirth: Date;
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   cellNumber: string;
-  address: string;
+  address?: string;
   sex: IHumanSexCodes;
   password: string;
   hourlyPayment: number;
   admissionDate: Date;
-  terminationDate: Date | null;
+  terminationDate?: Date;
   rg: string;
   nationality: string;
   maritalStatus: IMaritalStatus;
   numberOfChildren: number;
-  bankName: string;
-  accountNumber: string;
-  agencyNumber: string;
-  pixKey: string;
-  permitionId?: string;
-  permition: IPermitions;
-  roleId?: string;
+  bankName?: string;
+  accountNumber?: string;
+  agencyNumber?: string;
+  pixKey?: string;
+  permitionId: IPermitions;
+  roleId: string;
+  permition: IPermition;
   role: IRole;
 }
 
@@ -75,26 +80,26 @@ export interface IEmployeeDTO {
   cpf: string;
   name: string;
   status: IStatus;
-  dateOfBirth: string;
+  dateOfBirth: Date;
   email: string;
-  phoneNumber: string;
+  phoneNumber?: string;
   cellNumber: string;
-  address: string;
+  address?: string;
   sex: IHumanSexCodes;
   password: string;
   hourlyPayment: number;
   admissionDate: Date;
-  terminationDate: Date | null;
+  terminationDate?: Date;
   rg: string;
   nationality: string;
   maritalStatus: IMaritalStatus;
   numberOfChildren: number;
-  bankName: string;
-  accountNumber: string;
-  agencyNumber: string;
-  pixKey: string;
-  permitionId?: string;
-  roleId?: string;
+  bankName?: string;
+  accountNumber?: string;
+  agencyNumber?: string;
+  pixKey?: string;
+  permitionId: number;
+  roleId: string;
 }
 
 export interface IPayslip {
@@ -114,11 +119,6 @@ export interface IPayslip {
 export interface ISignInData {
   Email: string;
   Password: string;
-}
-
-export interface IUser {
-  email: string;
-  permition: IPermitions
 }
 
 export interface ILoginUserRequest {

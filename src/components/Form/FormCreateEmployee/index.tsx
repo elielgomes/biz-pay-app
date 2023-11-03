@@ -8,8 +8,9 @@ import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
 
 import api from "@/api";
 import { cn } from "@/lib/utils";
-import { IHumanSexCodes, IMaritalStatus, IPermitions, IRole } from "@/interfaces";
-import { nacionalities } from "@/resources/nacionalities";
+import { IEmployeeDTO, IHumanSexCodes, IMaritalStatus, IPermitions, IRole, IStatus } from "@/interfaces";
+import { nationalities } from "@/resources/nationalities";
+import { humanSexCodes } from "@/resources/humanSexCodes";
 
 // Components
 import { Separator } from "@/components/ui/separator"
@@ -39,7 +40,13 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar";
 import MaskInput from "@/components/MaskInput";
-import { IMaskInput } from "react-imask";
+import { ICreateEmployee } from "@/app/dashboard/funcionarios/page";
+import { IHandleEmployeeEdit } from "@/components/Modal/ModalCreateEmployee";
+
+interface IProps {
+	createEmployee?: ({ employee, callBack }: ICreateEmployee) => void;
+	handleEmployeeEdit?: IHandleEmployeeEdit;
+}
 
 export type TCreateEmployeeForm = z.infer<typeof createEmployeeFormSchema>;
 
@@ -85,7 +92,7 @@ const createEmployeeFormSchema = z.object({
 	}).max(new Date(), {
 		message: "A data de nascimento não pode ser futura.",
 	}),
-	nacionality: z.string({
+	nationality: z.string({
 		required_error: "A nacionalidade é obrigatória.",
 	}).min(1, {
 		message: "Nacionality must be at least 1 characters.",
@@ -153,49 +160,81 @@ const maritalStatus = [
 	{ label: "Viúvo", value: IMaritalStatus.widowed },
 ] as const;
 
-const humanSexCodes = [
-	{ label: "Masculino", value: IHumanSexCodes.male },
-	{ label: "Feminino", value: IHumanSexCodes.female },
-	{ label: "Indefinido", value: IHumanSexCodes.notApplicable },
-	{ label: "Outro", value: IHumanSexCodes.notKnown },
-] as const;
-
 const permitions = [
 	{ label: "Usuário", value: IPermitions.user },
 	{ label: "Administrador", value: IPermitions.admin },
 ] as const;
 
-export const FormCreateEmployee: React.FC = () => {
+export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmployeeEdit }) => {
+
+	let defaultEmployee = handleEmployeeEdit?.employee;
+
+	const formDefaultValues = React.useCallback((employee?: IEmployeeDTO) => {
+		if (employee) {
+			return {
+				name: employee.name,
+				email: employee.email,
+				cpf: employee.cpf,
+				rg: employee.rg,
+				cellPhone: employee.cellNumber,
+				phone: employee.phoneNumber,
+				password: employee.password,
+				confirmPassword: employee.password,
+				dateOfBirth: new Date(employee.dateOfBirth),
+				nationality: employee.nationality,
+				numberOfChildren: employee.numberOfChildren,
+				maritalStatus: employee.maritalStatus,
+				address: employee.address,
+				sex: employee.sex,
+				hourlyPayment: employee.hourlyPayment.toString().replace(".", ","),
+				admissionDate: new Date(employee.admissionDate),
+				role: employee.roleId,
+				permition: employee.permitionId,
+				bankName: employee.bankName,
+				accountNumber: employee.accountNumber,
+				agencyNumber: employee.agencyNumber,
+				pixKey: employee.pixKey,
+			}
+		} else {
+			return {
+				name: "",
+				email: "",
+				cpf: "",
+				rg: "",
+				cellPhone: "",
+				phone: "",
+				password: "",
+				confirmPassword: "",
+				dateOfBirth: new Date(),
+				nationality: "Brasileira(o)",
+				numberOfChildren: 0,
+				maritalStatus: undefined,
+				address: "",
+				sex: undefined,
+				hourlyPayment: "",
+				admissionDate: new Date(),
+				role: undefined,
+				permition: undefined,
+				bankName: "",
+				accountNumber: "",
+				agencyNumber: "",
+				pixKey: "",
+			}
+		}
+	}, [])
 
 	const form = useForm<TCreateEmployeeForm>({
 		resolver: zodResolver(createEmployeeFormSchema),
 		defaultValues: {
-			name: "",
-			email: "",
-			cpf: undefined,
-			rg: undefined,
-			cellPhone: undefined,
-			phone: "",
-			password: "",
-			confirmPassword: "",
-			dateOfBirth: new Date(),
-			nacionality: "Brasileira(o)",
-			numberOfChildren: 0,
-			maritalStatus: undefined,
-			address: "",
-			sex: undefined,
-			hourlyPayment: undefined,
-			admissionDate: new Date(),
-			role: undefined,
-			permition: undefined,
-			bankName: "",
-			accountNumber: "",
-			agencyNumber: "",
-			pixKey: "",
+			...formDefaultValues(defaultEmployee),
 		}
 	});
 
 	const [roles, setRoles] = React.useState<IRole[] | null>(null);
+
+	const resetAllFields = React.useCallback(() => {
+		form.reset({ ...form.control._defaultValues });
+	}, [form])
 
 	const getAllRoles = React.useCallback(() => {
 		if (!roles) {
@@ -205,15 +244,49 @@ export const FormCreateEmployee: React.FC = () => {
 				toast({
 					variant: "error",
 					title: "Ops algo de errado occorreu!",
-					description: error.message ? error.message : "Erro ao carregar os cargos",
+					description: error.message ? error.message : "Erro ao carregar os cargos.",
 				});
 			});
 		}
 	}, [roles]);
 
 	const onSubmit = (data: TCreateEmployeeForm) => {
-		console.log(data);
+		const newEmployee: IEmployeeDTO = {
+			cpf: data.cpf,
+			name: data.name,
+			status: IStatus.Ativo,
+			dateOfBirth: new Date(data.dateOfBirth),
+			email: data.email,
+			phoneNumber: data.phone,
+			cellNumber: data.cellPhone,
+			address: data.address,
+			sex: data.sex,
+			password: data.password,
+			hourlyPayment: Number(data.hourlyPayment.replace(",", ".")),
+			admissionDate: new Date(data.admissionDate),
+			terminationDate: undefined,
+			rg: data.rg,
+			nationality: data.nationality,
+			maritalStatus: data.maritalStatus,
+			numberOfChildren: data.numberOfChildren,
+			bankName: data.bankName,
+			accountNumber: data.accountNumber,
+			agencyNumber: data.agencyNumber,
+			pixKey: data.pixKey,
+			permitionId: data.permition,
+			roleId: data.role,
+		};
+
+		if (defaultEmployee && handleEmployeeEdit) {
+			handleEmployeeEdit.editEmployee({ employee: newEmployee, callBack: () => form.reset({ ...formDefaultValues(newEmployee) }) });
+		} else {
+			createEmployee && createEmployee({ employee: newEmployee, callBack: resetAllFields });
+		}
 	};
+
+	React.useEffect(() => {
+		getAllRoles();
+	}, [getAllRoles]);
 
 	return (
 		<>
@@ -265,7 +338,6 @@ export const FormCreateEmployee: React.FC = () => {
 									<FormLabel>Rg *</FormLabel>
 									<FormControl>
 										<MaskInput
-											type="string"
 											onBlur={field.onBlur}
 											inputRef={field.ref}
 											disabled={field.disabled}
@@ -434,7 +506,7 @@ export const FormCreateEmployee: React.FC = () => {
 
 						<FormField
 							control={form.control}
-							name="nacionality"
+							name="nationality"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
 									<FormLabel>Nacionalidade *</FormLabel>
@@ -450,7 +522,7 @@ export const FormCreateEmployee: React.FC = () => {
 													)}
 												>
 													{field.value
-														? nacionalities.find((nacionality) => nacionality.label === field.value)?.label
+														? nationalities.find((nacionality) => nacionality.label === field.value)?.label
 														: "Selecione o nacionalidade"}
 													<ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
 												</Button>
@@ -463,12 +535,12 @@ export const FormCreateEmployee: React.FC = () => {
 												<CommandInput placeholder="Buscar nacionalidade" />
 												<CommandEmpty>Nacionalidade não encontrada</CommandEmpty>
 												<CommandGroup className="max-h-44 overflow-y-auto">
-													{nacionalities.map((nacionality) => (
+													{nationalities.map((nacionality) => (
 														<CommandItem
 															key={nacionality.label}
 															value={nacionality.value}
 															onSelect={() => {
-																form.setValue("nacionality", nacionality.value)
+																form.setValue("nationality", nacionality.value)
 															}}
 														>
 															<Check
@@ -727,7 +799,6 @@ export const FormCreateEmployee: React.FC = () => {
 										<PopoverTrigger asChild>
 											<FormControl>
 												<Button
-													onClick={() => getAllRoles()}
 													variant="outline"
 													role="combobox"
 													className={cn(
@@ -916,9 +987,10 @@ export const FormCreateEmployee: React.FC = () => {
 					</div>
 
 					<div className="flex gap-6 justify-end">
-						<Button type="button" className="w-32 bg-transparent text-red-500 border border-red-500 hover:text-white hover:bg-red-600">Cancelar</Button>
-						<Button type="button" onClick={form.handleSubmit(onSubmit)} className="bg-emerald-500 hover:bg-emerald-600 w-32">Salvar</Button>
+						<Button onClick={() => resetAllFields()} type="button" className="w-32 bg-transparent text-red-500 border border-red-500 hover:text-white hover:bg-red-600">Cancelar</Button>
+						<Button type="submit" className="bg-emerald-500 hover:bg-emerald-600 w-32">Salvar</Button>
 					</div>
+
 				</form>
 			</Form>
 		</>

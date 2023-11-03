@@ -10,11 +10,6 @@ import { ISignInData } from "@/interfaces";
 const Home = () => {
 
 	const { signIn } = useContext(AuthContext);
-
-	// function signIn({ Email, Password }: ISignInData){
-	// 	console.log("TESTE", Email, Password)
-	// }
-
 	return (
 		<main className="flex min-h-screen flex-col items-center justify-between p-24">
 			<LoginForm signIn={signIn} />

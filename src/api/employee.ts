@@ -1,10 +1,10 @@
-import { IEmployee, ILoginUserRequest, IUser, ILoginUserResponse, IEmployeeDTO } from "@/interfaces";
+import { IEmployee, ILoginUserRequest, ILoginUserResponse, IEmployeeDTO } from "@/interfaces";
 import { axiosApi } from "@/services/api";
 import axios from "axios";
 
 export class Employee {
 
-  async getUserByToken(token: string): Promise<IUser> {
+  async getUserByToken(token: string): Promise<IEmployee> {
     return await axiosApi.get(`/employee/token/${token}`)
       .then(response => response.data);
   }
@@ -28,9 +28,10 @@ export class Employee {
   }
 
   async updateEmployee(employee: IEmployeeDTO) {
-   await axiosApi.patch(`/employee`, employee);
+    await axiosApi.patch(`/employee`, employee);
   }
-  async createEmployee(employee: IEmployee) {
+
+  async createEmployee(employee: IEmployeeDTO) {
     await axiosApi.post(`/employee`, employee);
   }
 

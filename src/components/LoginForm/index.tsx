@@ -73,7 +73,7 @@ export const LoginForm: React.FC<IProps> = ({ signIn }) => {
 						<input
 							type="password"
 							className="block rounded-md px-2.5 pb-2.5 pt-5 w-full text-sm text-black bg-blue-dark border-0 appearance-none focus:outline-none focus:ring-0 peer"
-							placeholder="asdas"
+							placeholder=" "
 							{...register("Password")}
 						/>
 						<label
