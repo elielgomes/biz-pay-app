@@ -105,7 +105,6 @@ export interface IEmployeeDTO {
 export interface IPayslip {
   id: string;
   dateOfIssue: Date;
-  lastEdition?: Date;
   grossSalary: number;
   netSalary: number;
   discounts: number;
@@ -114,6 +113,15 @@ export interface IPayslip {
   irrf: number;
   employeeCpf: string;
   employee: IEmployee;
+}
+
+export interface IPayslipDTO {
+  id?: string;
+  dateOfIssue: Date;
+  grossSalary: number;
+  discounts: number;
+  bonus: number;
+  employeeCpf?: string;
 }
 
 export interface ISignInData {

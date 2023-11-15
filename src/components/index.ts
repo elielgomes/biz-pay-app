@@ -8,6 +8,7 @@ import { Spinner } from "./Spinner";
 import { ProfileCards } from "./ProfileCards";
 import { PayslipDataTable } from "./PayslipDataTable";
 import { ModalPayslip } from "./Modal/ModalPayslip";
+import { ModalCreatePayslip } from "./Modal/ModalCreatePayslip";
 
 export {
   Container,
@@ -18,4 +19,5 @@ export {
   ProfileCards,
   PayslipDataTable,
   ModalPayslip,
+  ModalCreatePayslip,
 }

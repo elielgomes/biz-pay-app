@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { IEmployee, } from "@/interfaces";
+import { IEmployee, IPayslip, IPayslipDTO, } from "@/interfaces";
 import api from "@/api";
 import { toast } from "@/components/ui/use-toast";
 import { ProfileCards, ModalCreateEmployee, Container, PayslipDataTable } from "@/components";
@@ -9,12 +9,17 @@ import { ICreateEmployee } from "@/app/dashboard/funcionarios/page";
 import { IHandleEmployeeEdit } from "@/components/Modal/ModalCreateEmployee";
 import { Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ModalCreatePayslip } from "@/components";
+import { ICreatePayslip, IHandlePayslipEdit } from "@/components/Form/FormCreatePayslip";
 
 const Page = ({ params }: { params: { cpf: string } }) => {
 
 	const [modalOpen, setModalOpen] = React.useState<boolean>(false);
+	const [modalCreateOpen, setModalCreateOpen] = React.useState<boolean>(false);
 	const [employee, setEmployee] = React.useState<IEmployee | null>(null);
 	const [handleEditEmployee, setHandleEditEmployee] = React.useState<IHandleEmployeeEdit | undefined>(undefined);
+	const [handleEditPayslip, setHandleEditPayslip] = React.useState<IHandlePayslipEdit | undefined>(undefined);
+
 
 	const getEmployee = React.useCallback(() => {
 		api.employee.getEmployeeByCpf(params.cpf).then((data) => {
@@ -50,11 +55,8 @@ const Page = ({ params }: { params: { cpf: string } }) => {
 		getEmployee();
 	}, [getEmployee]);
 
-
-
 	const handleEdit = React.useCallback((employee?: IEmployee) => {
 		if (employee) {
-
 			setHandleEditEmployee({
 				modalTitle: "Editar funcionário",
 				employee: employee,
@@ -70,6 +72,57 @@ const Page = ({ params }: { params: { cpf: string } }) => {
 		}
 	}, [editEmployee]);
 
+	const createPayslip = React.useCallback(({ payslip, callBack }: ICreatePayslip) => {
+		api.payslip.createPayslip(payslip).then(() => {
+			toast({
+				variant: "success",
+				title: "Holerite criado com sucesso!",
+				description: "O Holerite foi criado com sucesso.",
+			});
+			callBack && callBack();
+		}).catch((error) => {
+			toast({
+				variant: "error",
+				title: "Error ao criar holerite!",
+				description: error.message ? error.message : "Erro ao criar holerite.",
+			});
+		});
+	}, []);
+
+	const editPayslip = React.useCallback(({ payslip, callBack }: ICreatePayslip) => {
+		api.payslip.updatePayslip(payslip).then(() => {
+			toast({
+				variant: "success",
+				title: "Holerite editado com sucesso!",
+				description: "O holerite foi editado com sucesso.",
+			});
+			callBack && callBack();
+		}).catch((error) => {
+			toast({
+				variant: "error",
+				title: "Error ao editar holerite!",
+				description: error.message ? error.message : "Erro ao editar holerite.",
+			});
+		});
+	}, []);
+
+	const handlePayslipEdit = React.useCallback((payslip?: IPayslipDTO) => {
+		if (payslip) {
+			setHandleEditPayslip({
+				modalTitle: "Editar holerite",
+				payslip: payslip,
+				editPayslip: editPayslip,
+			});
+			setModalCreateOpen(true);
+		} else {
+			toast({
+				variant: "error",
+				title: "Error!",
+				description: "Houve um erro ao tentar editar um funcionário.",
+			});
+		}
+	}, [editPayslip]);
+	
 	return (
 		<>
 			<Container>
@@ -90,7 +143,21 @@ const Page = ({ params }: { params: { cpf: string } }) => {
 
 				<ProfileCards employee={employee} />
 
-				<PayslipDataTable employeeCpf={employee?.cpf} />
+				<div className="flex justify-end mt-4">
+					<Button onClick={() => setModalCreateOpen(true)} className="flex gap-2">
+						<Edit size={18} />	Criar holerite
+					</Button>
+				</div>
+
+				<ModalCreatePayslip
+					open={modalCreateOpen}
+					onOpenChange={()=> modalCreateOpen && setModalCreateOpen(false)}
+					createPayslip={createPayslip}
+					employeeCpf={employee?.cpf}
+					handlePayslipEdit={handleEditPayslip}
+				/>
+
+				<PayslipDataTable employeeCpf={employee?.cpf} editPayslip={handlePayslipEdit} />
 
 			</Container>
 		</>

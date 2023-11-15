@@ -35,10 +35,11 @@ import {
 	TableHeader,
 	TableRow,
 } from "@/components/ui/table"
-import { IPayslip } from "@/interfaces"
+import { IPayslip, IPayslipDTO } from "@/interfaces"
 import api from "@/api"
 import formatDate from "@/lib/formatDate"
 import { ModalPayslip } from ".."
+import { ICreatePayslip, IHandlePayslipEdit } from "../Form/FormCreatePayslip"
 
 export const columns: ColumnDef<IPayslip>[] = [
 	{
@@ -106,9 +107,10 @@ export const columns: ColumnDef<IPayslip>[] = [
 
 interface IProps {
 	employeeCpf?: string;
+	editPayslip: (payslip: IPayslipDTO) => void;
 }
 
-export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf }) => {
+export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf, editPayslip }) => {
 	const [sorting, setSorting] = React.useState<SortingState>([])
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
 		[]
@@ -152,6 +154,21 @@ export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf }) => {
 		},
 	})
 
+	const handleCreateOrEditPayslip = React.useCallback((payslip?: IPayslip) => {
+		if (payslip) {
+console.log(payslip);
+			const edited: IPayslipDTO = {
+				id: payslip.id,
+				dateOfIssue: payslip.dateOfIssue,
+				grossSalary: payslip.grossSalary,
+				discounts: payslip.discounts,
+				bonus: payslip.bonus,
+				employeeCpf: payslip.employeeCpf,
+			}
+			editPayslip(edited);
+		}
+	}, [editPayslip]);
+
 	return (
 		<div className="w-full">
 			<ModalPayslip payslipId={payslipId} open={modalOpen} onOpenChange={setModalOpen} />
@@ -165,7 +182,7 @@ export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf }) => {
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant="outline" className="ml-auto">
-							Columns <ChevronDown className="ml-2 h-4 w-4" />
+							Exibir colunas <ChevronDown className="ml-2 h-4 w-4" />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align="end">
@@ -240,8 +257,9 @@ export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf }) => {
 													Copiar ID
 												</DropdownMenuItem>
 												<DropdownMenuSeparator />
-												<DropdownMenuItem onClick={() => showMore(row.original.id)}>Ver detalhes</DropdownMenuItem>
+												<DropdownMenuItem onClick={() => handleCreateOrEditPayslip(row.original)}>Editar</DropdownMenuItem>
 												<DropdownMenuItem>Baixar</DropdownMenuItem>
+												<DropdownMenuItem onClick={() => showMore(row.original.id)}>Ver detalhes</DropdownMenuItem>
 											</DropdownMenuContent>
 										</DropdownMenu>
 									</TableCell>
@@ -261,10 +279,10 @@ export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf }) => {
 				</Table>
 			</div>
 			<div className="flex items-center justify-end space-x-2 py-4">
-				<div className="flex-1 text-sm text-muted-foreground">
+				{/* <div className="flex-1 text-sm text-muted-foreground">
 					{table.getFilteredSelectedRowModel().rows.length} of{" "}
 					{table.getFilteredRowModel().rows.length} row(s) selected.
-				</div>
+				</div> */}
 				<div className="space-x-2">
 					<Button
 						variant="outline"

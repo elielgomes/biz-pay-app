@@ -1,4 +1,5 @@
 "use client"
+import React from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +24,16 @@ export const LoginForm: React.FC<IProps> = ({ signIn }) => {
 	} = useForm<TLoginUserFormData>({
 		resolver: zodResolver(loginUserFormSchema),
 	});
+
+	React.useEffect(() => {
+		window.addEventListener("keydown", (e) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				e.stopPropagation();
+				handleSubmit(signIn)();
+			}
+		});
+	}, [handleSubmit, signIn]);
 
 	return (
 		<>
