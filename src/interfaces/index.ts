@@ -1,8 +1,6 @@
 export enum IHumanSexCodes {
-  notKnown = 0,
   male = 1,
   female = 2,
-  notApplicable = 9,
 }
 
 export enum IStatus {
@@ -59,7 +57,6 @@ export interface IEmployee {
   address?: string;
   sex: IHumanSexCodes;
   password: string;
-  hourlyPayment: number;
   admissionDate: Date;
   terminationDate?: Date;
   rg: string;
@@ -87,7 +84,6 @@ export interface IEmployeeDTO {
   address?: string;
   sex: IHumanSexCodes;
   password: string;
-  hourlyPayment: number;
   admissionDate: Date;
   terminationDate?: Date;
   rg: string;

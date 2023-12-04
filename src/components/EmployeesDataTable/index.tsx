@@ -50,27 +50,29 @@ export interface IProps {
 
 export const columns: ColumnDef<IEmployee>[] = [
 
-	{
-		id: "Select",
-		accessorKey: "select",
-		header: ({ table }) => (
-			<Checkbox
-				checked={table.getIsAllPageRowsSelected()}
-				onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-				aria-label="Select all"
-			/>
-		),
-		cell: ({ row }) => (
-			<Checkbox
-				checked={row.getIsSelected()}
-				onCheckedChange={(value) => row.toggleSelected(!!value)}
-				aria-label="Select row"
-				value={row.original.cpf}
-			/>
-		),
-		enableSorting: false,
-		enableHiding: false,
-	},
+	// {
+	// 	id: "Select",
+	// 	accessorKey: "select",
+	// 	header: ({ table }) => (
+	// 		<Checkbox
+	// 			className="data-[state=checked]:bg-[#FF9B44] data-[state=checked]:border-[#FF9B44]"
+	// 			checked={table.getIsAllPageRowsSelected()}
+	// 			onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+	// 			aria-label="Select all"
+	// 		/>
+	// 	),
+	// 	cell: ({ row }) => (
+	// 		<Checkbox
+	// 		className="data-[state=checked]:bg-[#FF9B44] data-[state=checked]:border-[#FF9B44]"
+	// 			checked={row.getIsSelected()}
+	// 			onCheckedChange={(value) => row.toggleSelected(!!value)}
+	// 			aria-label="Select row"
+	// 			value={row.original.cpf}
+	// 		/>
+	// 	),
+	// 	enableSorting: false,
+	// 	enableHiding: false,
+	// },
 	{
 		id: "Status",
 		accessorKey: "status",
@@ -87,7 +89,7 @@ export const columns: ColumnDef<IEmployee>[] = [
 			)
 		},
 		cell: ({ row }) => (
-			<div className="capitalize flex items-center gap-2">
+			<div className="capitalize flex items-center gap-2 text-slate-500 font-medium">
 				<div className={`inline-block w-3 h-3 rounded-full ${IStatus[row.original.status] == "Inativo" ? "bg-red-500" : "bg-emerald-500"}`}></div>
 				{IStatus[row.original.status]}
 			</div>
@@ -107,7 +109,7 @@ export const columns: ColumnDef<IEmployee>[] = [
 				</Button>
 			)
 		},
-		cell: ({ row }) => <div className="capitalize">{row.original.name}</div>,
+		cell: ({ row }) => <div className="capitalize text-slate-500 font-medium">{row.original.name}</div>,
 	},
 	{
 		id: "E-mail",
@@ -123,7 +125,7 @@ export const columns: ColumnDef<IEmployee>[] = [
 				</Button>
 			)
 		},
-		cell: ({ row }) => <div className="lowercase">{row.original.email}</div>,
+		cell: ({ row }) => <div className="lowercase text-slate-500 font-medium">{row.original.email}</div>,
 	},
 	{
 		id: "Cargo",
@@ -141,7 +143,7 @@ export const columns: ColumnDef<IEmployee>[] = [
 			)
 		},
 		cell: ({ row }) => (
-			<div className="capitalize">
+			<div className="capitalize text-slate-500 font-medium">
 				{row.original.role?.name}
 			</div>
 		),
@@ -202,7 +204,7 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 	}, [editEmployee]);
 
 	return (
-		<div className="w-full">
+		<div className="w-full bg-white p-5 rounded-lg shadow-lg">
 
 			<ModalCreateEmployee
 				open={modalOpen}
@@ -218,13 +220,13 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 					placeholder="Buscar por status, nome, email ou cargo"
 					value={filtering}
 					onChange={(event) => setFiltering(event.target.value)}
-					className="max-w-sm"
+					className="max-w-sm focus-visible:ring-1	focus-visible:ring-[#FF9B44] focus-visible:ring-offset-1"
 				/>
 
 				<div className="flex gap-4">
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
-							<Button variant="outline" className="ml-auto">
+							<Button variant="outline" className="ml-auto border-[#FF9B44] text-[#FF9B44] hover:text-[#FC6075]">
 								Exibir colunas <ChevronDown className="ml-2 h-4 w-4" />
 							</Button>
 						</DropdownMenuTrigger>
@@ -235,6 +237,7 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 								.map((column) => {
 									return (
 										<DropdownMenuCheckboxItem
+											className="text-slate-500"
 											key={column.id}
 											checked={column.getIsVisible()}
 											onCheckedChange={(value) =>
@@ -248,18 +251,18 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 						</DropdownMenuContent>
 					</DropdownMenu>
 
-					<Button onClick={() => handleCreateOrEditEmployee()} className="flex gap-2">
+					<Button onClick={() => handleCreateOrEditEmployee()} className="flex gap-2 bg-gradient-to-r to-[#FF9B44] from-[#FC6075] transition-all hover:brightness-95">
 						<Plus size={18} />	Criar funcionário
 					</Button>
 				</div>
 
 			</div>
 
-			<div className="rounded-md border">
+			<div className="">
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id}>
+							<TableRow key={headerGroup.id} className="hover:bg-white">
 								{headerGroup.headers.map((header) => {
 									return (
 										<TableHead key={header.id}>
@@ -300,7 +303,7 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 													<MoreHorizontal className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
+											<DropdownMenuContent align="end" className="text-slate-600">
 												<DropdownMenuLabel>Ações</DropdownMenuLabel>
 
 												<DropdownMenuItem onClick={() => navigator.clipboard.writeText(row.original.cpf)}>
@@ -315,7 +318,7 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 														<div className={`inline-block w-3 h-3 rounded-full ${IStatus[row.original.status] == "Ativo" ? "bg-red-500" : "bg-emerald-500"}`}></div>
 													</div>
 												</DropdownMenuItem>
-												
+
 												<DropdownMenuItem onClick={() => handleCreateOrEditEmployee(row.original)}>
 													Editar informações
 												</DropdownMenuItem>
@@ -337,7 +340,7 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 							<TableRow>
 								<TableCell
 									colSpan={columns.length}
-									className="h-24 text-center"
+									className="h-24 text-center text-slate-700"
 								>
 									Sem resultados...
 								</TableCell>
@@ -349,12 +352,13 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 			</div>
 
 			<div className="flex items-center justify-end space-x-2 py-4">
-				<div className="flex-1 text-sm text-muted-foreground">
+				{/* <div className="flex-1 text-sm text-muted-foreground">
 					{table.getFilteredSelectedRowModel().rows.length} de{" "}
 					{table.getFilteredRowModel().rows.length} linha(s) selecionadas.
-				</div>
+				</div> */}
 				<div className="space-x-2">
 					<Button
+						className="text-slate-700"
 						variant="outline"
 						size="sm"
 						onClick={() => table.previousPage()}
@@ -363,6 +367,7 @@ export const EmployeesDataTable: React.FC<IProps> = ({ employees, updateEmployee
 						Anterior
 					</Button>
 					<Button
+						className="text-slate-700"
 						variant="outline"
 						size="sm"
 						onClick={() => table.nextPage()}

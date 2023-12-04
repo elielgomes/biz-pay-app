@@ -2,12 +2,12 @@ import './globals.css'
 import type { Metadata } from 'next'
 import { AuthProvider } from '@/contexts/AuthContext';
 import { Toaster } from '@/components/ui/toaster';
-import { Roboto } from "next/font/google";
+import { Nunito_Sans } from "next/font/google";
 import { Navbar } from '@/components/Navbar';
 import { usePathname } from 'next/navigation';
 
-const roboto = Roboto({
-	weight: ["100", '300', '400', '500', '700', '900'],
+const nunito = Nunito_Sans({
+	weight: ["300", "400", "500", "700"],
 	subsets: ['latin'],
 	style: 'normal',
 });
@@ -24,7 +24,7 @@ export default function RootLayout({
 }) {
 	return (
 		<html lang="pt-br">
-			<body className={`${roboto.className} bg-slate-50`}>
+			<body className={`${nunito.className} bg-slate-50 subpixel-antialiased`}>
 				<AuthProvider>
 					{children}
 					<Toaster />

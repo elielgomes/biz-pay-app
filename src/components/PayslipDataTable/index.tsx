@@ -1,5 +1,6 @@
 "use client"
 
+
 import * as React from "react"
 import {
 	ColumnDef,
@@ -14,6 +15,7 @@ import {
 	useReactTable,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal } from "lucide-react"
+import { usePayslipDataTable } from "./hook"
 
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -37,9 +39,10 @@ import {
 } from "@/components/ui/table"
 import { IPayslip, IPayslipDTO } from "@/interfaces"
 import api from "@/api"
-import formatDate from "@/lib/formatDate"
 import { ModalPayslip } from ".."
 import { ICreatePayslip, IHandlePayslipEdit } from "../Form/FormCreatePayslip"
+import { set } from "date-fns"
+import { DownloadPDF } from "../PDF"
 
 export const columns: ColumnDef<IPayslip>[] = [
 	{
@@ -56,7 +59,7 @@ export const columns: ColumnDef<IPayslip>[] = [
 				</Button>
 			)
 		},
-		cell: ({ row }) => <div className="lowercase">{formatDate(row.original.dateOfIssue)}</div>,
+		cell: ({ row }) => <div className="lowercase text-slate-500 font-medium">{new Date(row.original.dateOfIssue).toLocaleDateString('pt-br')}</div>,
 	},
 	{
 		id: "Salário Bruto",
@@ -77,7 +80,7 @@ export const columns: ColumnDef<IPayslip>[] = [
 				style: "currency",
 				currency: "BRL",
 			}).format(row.original.grossSalary)
-			return <div>{formatted}</div>
+			return <div className="text-slate-500 font-medium">{formatted}</div>
 		},
 	},
 	{
@@ -99,7 +102,7 @@ export const columns: ColumnDef<IPayslip>[] = [
 				style: "currency",
 				currency: "BRL",
 			}).format(row.original.netSalary)
-			return <div>{formatted}</div>
+			return <div className="text-slate-700 font-medium">{formatted}</div>
 		},
 	},
 ]
@@ -108,9 +111,13 @@ export const columns: ColumnDef<IPayslip>[] = [
 interface IProps {
 	employeeCpf?: string;
 	editPayslip: (payslip: IPayslipDTO) => void;
+	buttonChildren?: React.ReactNode;
+	refresher?: boolean;
 }
 
-export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf, editPayslip }) => {
+export const PayslipDataTable: React.FC<IProps> = ({ refresher, employeeCpf, editPayslip, buttonChildren }) => {
+
+	const { refresh, onRefresh } = usePayslipDataTable();
 	const [sorting, setSorting] = React.useState<SortingState>([])
 	const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
 		[]
@@ -121,13 +128,16 @@ export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf, editPayslip })
 	const [filtering, setFiltering] = React.useState<string>("");
 	const [data, setData] = React.useState<IPayslip[]>([]);
 	const [modalOpen, setModalOpen] = React.useState(false);
+	const [employeeCpfState, setEmployeeCpfState] = React.useState(employeeCpf);
+
 	const [payslipId, setPayslipId] = React.useState("");
 
 	React.useEffect(() => {
 		employeeCpf && api.payslip.getAllEmployeePayslips(employeeCpf).then((data) => {
 			setData(data);
 		});
-	}, [employeeCpf]);
+		return () => { }
+	}, [refresh, employeeCpf, refresher]);
 
 	const showMore = React.useCallback((payslipId: string) => {
 		setPayslipId(payslipId);
@@ -156,7 +166,6 @@ export const PayslipDataTable: React.FC<IProps> = ({ employeeCpf, editPayslip })
 
 	const handleCreateOrEditPayslip = React.useCallback((payslip?: IPayslip) => {
 		if (payslip) {
-console.log(payslip);
 			const edited: IPayslipDTO = {
 				id: payslip.id,
 				dateOfIssue: payslip.dateOfIssue,
@@ -169,48 +178,64 @@ console.log(payslip);
 		}
 	}, [editPayslip]);
 
+	const handleDeletePayslip = (payslipId: string) => {
+		api.payslip.deletePayslip(payslipId).then(() => {
+			onRefresh();
+		});
+	};
+
 	return (
-		<div className="w-full">
+		<div className="w-full bg-white p-4 rounded-lg shadow-lg mt-5">
+
+			<div className="flex flex-col p-2 space-y-2">
+				<h3 className="tracking-tight text-xl font-bold text-slate-700">Holerites</h3>
+				<div data-orientation="horizontal" role="none" className="shrink-0 dark:bg-slate-800 w-[100px] h-1 rounded-md bg-orange-500">
+				</div>
+			</div>
+
 			<ModalPayslip payslipId={payslipId} open={modalOpen} onOpenChange={setModalOpen} />
-			<div className="flex items-center py-4">
+			<div className="flex items-center justify-between py-4">
 				<Input
 					placeholder="Filtrar	por data ou salário..."
 					value={filtering}
 					onChange={(event) => setFiltering(event.target.value)}
-					className="max-w-sm"
+					className="max-w-sm focus-visible:ring-1	focus-visible:ring-[#FF9B44] focus-visible:ring-offset-1"
 				/>
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant="outline" className="ml-auto">
-							Exibir colunas <ChevronDown className="ml-2 h-4 w-4" />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align="end">
-						{table
-							.getAllColumns()
-							.filter((column) => column.getCanHide())
-							.map((column) => {
-								return (
-									<DropdownMenuCheckboxItem
-										key={column.id}
-										className="capitalize"
-										checked={column.getIsVisible()}
-										onCheckedChange={(value) =>
-											column.toggleVisibility(!!value)
-										}
-									>
-										{column.id}
-									</DropdownMenuCheckboxItem>
-								)
-							})}
-					</DropdownMenuContent>
-				</DropdownMenu>
+				<div className="flex gap-3">
+					<DropdownMenu>
+						<DropdownMenuTrigger asChild>
+							<Button variant="outline" className="ml-auto border-[#FF9B44] text-[#FF9B44] hover:text-[#FC6075]">
+								Exibir colunas <ChevronDown className="ml-2 h-4 w-4" />
+							</Button>
+						</DropdownMenuTrigger>
+						<DropdownMenuContent align="end">
+							{table
+								.getAllColumns()
+								.filter((column) => column.getCanHide())
+								.map((column) => {
+									return (
+										<DropdownMenuCheckboxItem
+											key={column.id}
+											className="capitalize text-slate-500"
+											checked={column.getIsVisible()}
+											onCheckedChange={(value) =>
+												column.toggleVisibility(!!value)
+											}
+										>
+											{column.id}
+										</DropdownMenuCheckboxItem>
+									)
+								})}
+						</DropdownMenuContent>
+					</DropdownMenu>
+					{buttonChildren}
+				</div>
 			</div>
-			<div className="rounded-md border">
+			<div>
 				<Table>
 					<TableHeader>
 						{table.getHeaderGroups().map((headerGroup) => (
-							<TableRow key={headerGroup.id}>
+							<TableRow key={headerGroup.id} className="hover:bg-white">
 								{headerGroup.headers.map((header) => {
 									return (
 										<TableHead key={header.id}>
@@ -249,7 +274,7 @@ console.log(payslip);
 													<MoreHorizontal className="h-4 w-4" />
 												</Button>
 											</DropdownMenuTrigger>
-											<DropdownMenuContent align="end">
+											<DropdownMenuContent align="end" className="text-slate-600">
 												<DropdownMenuLabel>Ações</DropdownMenuLabel>
 												<DropdownMenuItem
 													onClick={() => navigator.clipboard.writeText(row.original.id)}
@@ -257,8 +282,11 @@ console.log(payslip);
 													Copiar ID
 												</DropdownMenuItem>
 												<DropdownMenuSeparator />
+												<DropdownMenuItem onClick={() => handleDeletePayslip(row.original.id)}>Deletar</DropdownMenuItem>
 												<DropdownMenuItem onClick={() => handleCreateOrEditPayslip(row.original)}>Editar</DropdownMenuItem>
-												<DropdownMenuItem>Baixar</DropdownMenuItem>
+												<DropdownMenuItem>
+													<DownloadPDF payslip={row.original}></DownloadPDF>
+												</DropdownMenuItem>
 												<DropdownMenuItem onClick={() => showMore(row.original.id)}>Ver detalhes</DropdownMenuItem>
 											</DropdownMenuContent>
 										</DropdownMenu>
@@ -269,7 +297,7 @@ console.log(payslip);
 							<TableRow>
 								<TableCell
 									colSpan={columns.length}
-									className="h-24 text-center"
+									className="h-24 text-center text-slate-700"
 								>
 									Sem holerites cadastrados.
 								</TableCell>
@@ -285,20 +313,22 @@ console.log(payslip);
 				</div> */}
 				<div className="space-x-2">
 					<Button
+						className="text-slate-700"
 						variant="outline"
 						size="sm"
 						onClick={() => table.previousPage()}
 						disabled={!table.getCanPreviousPage()}
 					>
-						Previous
+						Anterior
 					</Button>
 					<Button
+						className="text-slate-700"
 						variant="outline"
 						size="sm"
 						onClick={() => table.nextPage()}
 						disabled={!table.getCanNextPage()}
 					>
-						Next
+						Próximo
 					</Button>
 				</div>
 			</div>

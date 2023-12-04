@@ -43,7 +43,7 @@ export const ModalCreateEmployee: React.FC<IProps> = ({
 			<DialogContent className="max-w-screen-lg max-h-screen px-0">
 				<ScrollArea className="max-h-[calc(100vh-100px)] px-4">
 					<DialogHeader>
-						<DialogTitle>{handleEmployeeEdit ? handleEmployeeEdit.modalTitle : "Novo funcionário"}</DialogTitle>
+						<DialogTitle className="text-slate-700">{handleEmployeeEdit ? handleEmployeeEdit.modalTitle : "Novo funcionário"}</DialogTitle>
 					</DialogHeader>
 					<div className="px-2 mt-8">
 						<FormCreateEmployee

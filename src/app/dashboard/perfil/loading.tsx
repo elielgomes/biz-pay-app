@@ -1,86 +1,141 @@
+"use strict";
+
 import React from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle
-} from "@/components/ui/card";
+import { Container } from "@/components/Container";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-const Loading = async () => {
+const Loading = () => {
 	return (
-		<div className="max-w-screen-xl mx-auto py-5 px-5 md:px-10 md:py-10">
-			<div className="mb-8">
-				<h1 className="text-2xl font-semibold">Perfil</h1>
-			</div>
-			<div className="w-full flex flex-col gap-5 md:flex-row mb-5">
-				<Card className="md:w-1/2">
-					<CardHeader className="space-y-0 flex flex-row gap-2">
-						<Skeleton className="bg-slate-200 rounded-full w-16 h-16" />
-						<div className="space-y-3">
-							<CardTitle className="text-lg font-semibold">
-								<Skeleton className="bg-slate-200 w-[150px] h-5" />
+		<>
+			<Container>
+				<div className="mb-8">
+					<h1 className="text-2xl font-semibold text-slate-700">Perfil</h1>
+					<div className="w-[100px] h-1 rounded-md bg-gradient-to-r to-[#FF9B44] from-[#FC6075]" />
+				</div>
+
+				<div className="w-full flex flex-col gap-5 md:flex-row mb-5">
+
+					<Card className="md:w-2/5 border-none overflow-hidden shadow-lg">
+						<CardHeader className="flex items-center space-y-6 mb-8 bg-gradient-to-b from-slate-200">
+							<div className="animate-pulse w-[80px] h-[80px] flex-shrink-0 bg-gradient-to-r to-[#FF9B44] from-[#FC6075] rounded-full flex items-center justify-center">
+								<span className="font-bold text-4xl text-white"></span>
+							</div>
+							<div className="space-y-3">
+								<CardTitle className="w-32 mx-auto bg-slate-300 h-4 rounded-lg"></CardTitle>
+								<CardDescription className="w-44 mx-auto bg-slate-300 h-4 rounded-lg"></CardDescription>
+							</div>
+						</CardHeader>
+						<CardContent className="space-y-5 animate-pulse pb-28">
+							<div className="space-y-3">
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+							<div className="space-y-3">
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+							<div className="space-y-3">
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+						</CardContent>
+					</Card>
+
+					<Card className="md:w-3/5 border-none shadow-lg">
+						<CardHeader className="space-y-2">
+							<CardTitle className="text-xl font-bold text-slate-700">
+								Informações Pessoais
 							</CardTitle>
-							<CardDescription>
-								<Skeleton className="bg-slate-200 w-[80px] h-4" />
-							</CardDescription>
-						</div>
-					</CardHeader>
+							<div className="w-[100px] h-1 rounded-md bg-gradient-to-r to-[#FF9B44] from-[#FC6075]" />
+						</CardHeader>
+						<CardContent className="space-y-6 animate-pulse">
 
-					<CardContent className="space-y-3">
-						<Skeleton className="bg-slate-200 w-1/2 h-4" />
-						<Skeleton className="bg-slate-200 w-full h-4" />
-					</CardContent>
+							<div className="flex gap-4">
+								<div className="w-36 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-36 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
 
-				</Card>
+							<div className="flex gap-4">
+								<div className="w-36 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-32 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
 
-				<Card className="md:w-1/2">
-					<CardHeader className="space-y-0">
-						<CardTitle className="text-lg font-semibold">
-							<Skeleton className="bg-slate-200 w-1/2 h-5" />
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-						<Skeleton className="bg-slate-200 w-1/2 h-4" />
-						<Skeleton className="bg-slate-200 w-full h-4" />
-					</CardContent>
-				</Card>
-			</div>
+							<div className="flex gap-4">
+								<div className="w-12 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
 
-			<div className="w-full flex flex-col gap-5 md:flex-row">
-				<Card className="md:w-1/2">
-					<CardHeader className="space-y-0">
-						<CardTitle className="text-lg font-semibold">
-							<Skeleton className="bg-slate-200 w-1/2 h-5" />
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-						<Skeleton className="bg-slate-200 w-1/2 h-4" />
-						<Skeleton className="bg-slate-200 w-1/2 h-4" />
-						<Skeleton className="bg-slate-200 w-1/2 h-4" />
-					</CardContent>
-				</Card>
+							<div className="flex gap-4">
+								<div className="w-28 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
 
-				<Card className="md:w-1/2">
-					<CardHeader className="space-y-0">
-						<CardTitle className="text-lg font-semibold">
-							<Skeleton className="bg-slate-200 w-1/2 h-5" />
-						</CardTitle>
-					</CardHeader>
-					<CardContent className="space-y-3">
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-						<Skeleton className="bg-slate-200 w-1/3 h-4" />
-					</CardContent>
-				</Card>
-			</div>
-		</div>
+							<div className="flex gap-4">
+								<div className="w-44 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-28 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
 
+							<div className="flex gap-4">
+								<div className="w-40 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-12 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+
+							<div className="flex gap-4">
+								<div className="w-16 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-48 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+
+							<div className="flex gap-4">
+								<div className="w-20 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-28 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+
+							<div className="flex gap-4">
+								<div className="w-20 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-28 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+
+							<div className="flex gap-4">
+								<div className="w-20 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-56 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+
+						</CardContent>
+					</Card>
+				</div>
+				<div className="w-full flex flex-col gap-5 md:flex-row">
+					<Card className="md:w-full border-none shadow-lg">
+						<CardHeader className="space-y-2">
+							<CardTitle className="text-xl font-bold text-slate-700">
+								Dados Bancários
+							</CardTitle>
+							<span className="w-[100px] h-1 rounded-md bg-orange-500" />
+						</CardHeader>
+						<CardContent className="space-y-3 animate-pulse">
+
+							<div className="flex gap-4">
+								<div className="w-28 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+							</div>
+
+							<div className="flex gap-4">
+								<div className="w-40 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+							</div >
+							<div className="flex gap-4">
+								<div className="w-44 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+							</div >
+							<div className="flex gap-4">
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+								<div className="w-24 bg-slate-300 h-4 rounded-lg"></div>
+							</div >
+
+						</CardContent >
+					</Card >
+				</div >
+			</Container>
+		</>
 	)
 }
 

@@ -1,10 +1,12 @@
-'use client'
+'use client';
+
 import React from "react";
 import * as z from "zod";
-import { format } from "date-fns"
+import { format, set } from "date-fns"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CalendarIcon, Check, ChevronsUpDown } from "lucide-react";
+import CurrencyInput from 'react-currency-input-field';
 
 import api from "@/api";
 import { cn } from "@/lib/utils";
@@ -40,6 +42,7 @@ import {
 } from "@/components/ui/popover"
 import { Calendar } from "@/components/ui/calendar";
 import MaskInput from "@/components/MaskInput";
+import { converStringToDate } from "@/lib/formatDate";
 
 export interface IHandlePayslipEdit {
 	modalTitle: string;
@@ -55,13 +58,13 @@ export interface ICreatePayslip {
 interface IProps {
 	createPayslip?: ({ payslip, callBack }: ICreatePayslip) => void;
 	handlePayslipEdit?: IHandlePayslipEdit;
-	employeeCpf?:	string;
+	employeeCpf?: string;
 }
 
 export type TCreatePayslipForm = z.infer<typeof createPayslipFormSchema>;
 
 const createPayslipFormSchema = z.object({
-	dateOfIssue: z.date(),
+	dateOfIssue: z.string(),
 	grossSalary: z.string(),
 	discounts: z.string(),
 	bonus: z.string(),
@@ -69,14 +72,15 @@ const createPayslipFormSchema = z.object({
 
 export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePayslipEdit, employeeCpf }) => {
 
+	const formRef = React.useRef<HTMLFormElement>(null);
+
 	let defaultPayslip = handlePayslipEdit?.payslip;
 
 	const formDefaultValues = React.useCallback((payslip?: IPayslipDTO) => {
-		console.log(payslip);
 		if (payslip) {
 			return {
 				id: payslip.id,
-				dateOfIssue: new Date(payslip.dateOfIssue),
+				dateOfIssue: new Date(payslip.dateOfIssue).toLocaleDateString('pt-br'),
 				grossSalary: payslip.grossSalary.toString(),
 				discounts: payslip.discounts.toString(),
 				bonus: payslip.bonus.toString(),
@@ -85,7 +89,7 @@ export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePaysl
 		} else {
 			return {
 				id: undefined,
-				dateOfIssue: new Date(),
+				dateOfIssue: new Date().toLocaleDateString('pt-br'),
 				grossSalary: "0",
 				discounts: "0",
 				bonus: "0",
@@ -108,9 +112,9 @@ export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePaysl
 
 	const onSubmit = (data: TCreatePayslipForm) => {
 		const newPayslip: IPayslipDTO = {
-			id: defaultPayslip?.id ?	defaultPayslip.id : undefined,
-			dateOfIssue: new Date(data.dateOfIssue),
-			grossSalary: Number(data.grossSalary),
+			id: defaultPayslip?.id ? defaultPayslip.id : undefined,
+			dateOfIssue: converStringToDate(data.dateOfIssue),
+			grossSalary: Number(parseFloat(data.grossSalary.replace(",", ".")).toFixed(2)),
 			discounts: Number(data.discounts),
 			bonus: Number(data.bonus),
 			employeeCpf: employeeCpf,
@@ -121,7 +125,25 @@ export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePaysl
 		} else {
 			createPayslip && createPayslip({ payslip: newPayslip, callBack: resetAllFields });
 		}
+
 	};
+
+	React.useEffect(() => {
+		const handleKeyPress = (event: KeyboardEvent) => {
+			if (event.key === "Enter") {
+				const submit = new Event("submit", { cancelable: true, bubbles: true });
+				submit.preventDefault();
+				formRef.current?.dispatchEvent(submit);
+			}
+		};
+
+		document.addEventListener("keypress", handleKeyPress);
+
+		return () => {
+			document.removeEventListener("keypress", handleKeyPress);
+		}
+
+	}, [form])
 
 	return (
 		<>
@@ -129,33 +151,64 @@ export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePaysl
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
 					<div>
-						<h2 className="text-center text-slate-900 font-semibold">Informações pessoais</h2>
-						<Separator className="my-3" />
+						<h2 className="text-center text-slate-700 font-semibold">Informações de pagamento</h2>
+						<Separator className="my-3 bg-gradient-to-r to-[#FF9B44] from-[#FC6075]" />
 					</div>
 
 					{/* salario / descontos */}
 					<div className="flex w-full gap-5">
+
 						<FormField
 							control={form.control}
 							name="grossSalary"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Salário Bruto *</FormLabel>
+									<FormLabel>Salário bruto <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
-										<Input {...field} />
+										<div className="relative">
+											<CurrencyInput
+												className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
+												intlConfig={{ locale: 'pt-br', currency: 'BRL' }}
+												placeholder="R$ 0,00"
+												defaultValue={0}
+												decimalsLimit={2}
+												decimalSeparator=","
+												groupSeparator="."
+												onValueChange={field.onChange}
+												value={field.value}
+												onBlur={field.onBlur}
+												name={field.name}
+												ref={field.ref}
+											/>
+										</div>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
+
+
 						<FormField
 							control={form.control}
 							name="discounts"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Descontos *</FormLabel>
+									<FormLabel>Descontos <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
-										<Input {...field} />
+										<CurrencyInput
+											className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
+											intlConfig={{ locale: 'pt-br', currency: 'BRL' }}
+											placeholder="R$ 0,00"
+											defaultValue={0}
+											decimalsLimit={2}
+											decimalSeparator=","
+											groupSeparator="."
+											onValueChange={field.onChange}
+											value={field.value}
+											onBlur={field.onBlur}
+											name={field.name}
+											ref={field.ref}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -170,9 +223,22 @@ export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePaysl
 							name="bonus"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Bónus *</FormLabel>
+									<FormLabel>Bónus <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
-										<Input {...field} />
+										<CurrencyInput
+											className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-slate-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950 dark:ring-offset-slate-950 dark:placeholder:text-slate-400 dark:focus-visible:ring-slate-300"
+											intlConfig={{ locale: 'pt-br', currency: 'BRL' }}
+											placeholder="R$ 0,00"
+											defaultValue={0}
+											decimalsLimit={2}
+											decimalSeparator=","
+											groupSeparator="."
+											onValueChange={field.onChange}
+											value={field.value}
+											onBlur={field.onBlur}
+											name={field.name}
+											ref={field.ref}
+										/>
 									</FormControl>
 									<FormMessage />
 								</FormItem>
@@ -184,42 +250,24 @@ export const FormCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePaysl
 							name="dateOfIssue"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Data de referência *</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant={"outline"}
-													className={cn(
-														"w-full pl-3 text-left font-normal",
-														!field.value && "text-muted-foreground"
-													)}
-												>
-													{field.value ? (
-														format(new Date(field.value), "PPP")
-													) : (
-														<span>Selecione a data</span>
-													)}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={field.value}
-												onSelect={field.onChange}
-												disabled={(date) =>
-													date > new Date() || date < new Date("1900-01-01")
-												}
-												initialFocus
-											/>
-										</PopoverContent>
-									</Popover>
+									<FormLabel>Data de referência <span className="text-red-500">*</span></FormLabel>
+									<MaskInput
+										type="string"
+										onBlur={field.onBlur}
+										inputRef={field.ref}
+										disabled={field.disabled}
+										name={field.name}
+										value={field.value}
+										onAccept={field.onChange}
+										mask="00/00/0000"
+										placeholder="00/00/0000"
+									/>
 									<FormMessage />
 								</FormItem>
 							)}
 						/>
+
+
 					</div>
 
 

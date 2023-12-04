@@ -27,7 +27,7 @@ export const ModalCreatePayslip: React.FC<IProps> = ({ createPayslip, handlePays
 				<DialogContent className="max-w-screen-lg max-h-screen px-0">
 					<ScrollArea className="max-h-[calc(100vh-100px)] px-4">
 						<DialogHeader>
-							<DialogTitle>{handlePayslipEdit ? handlePayslipEdit.modalTitle : "Novo funcionário"}</DialogTitle>
+							<DialogTitle className="text-slate-700">{handlePayslipEdit ? handlePayslipEdit.modalTitle : "Criar holerite"}</DialogTitle>
 						</DialogHeader>
 						<div className="px-2 mt-8">
 							<FormCreatePayslip

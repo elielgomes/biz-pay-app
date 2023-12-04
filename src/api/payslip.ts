@@ -18,4 +18,8 @@ export class Payslip {
   async updatePayslip(payslip: IPayslipDTO) {
     await axiosApi.patch(`/payslip`, payslip);
   }
+
+  async deletePayslip(id: string) {
+    await axiosApi.delete(`/payslip/${id}`);
+  }
 }

@@ -3,9 +3,10 @@
 import React, { Suspense, useContext } from "react";
 import { AuthContext } from "@/contexts/AuthContext";
 import { ProfileCards } from "@/components/ProfileCards";
-import { Container } from "@/components";
-import Loading from "./loading";
+import { Container } from "@/components/Container";
 import { IEmployee } from "@/interfaces";
+import { Separator } from "@/components/ui/separator";
+import Loading from "./loading";
 
 const Perfil = () => {
 
@@ -18,15 +19,17 @@ const Perfil = () => {
 	}, [auth.user]);
 
 	return (
-		<div className="max-w-screen-xl mx-auto py-5 px-5 md:px-10 md:py-10">
-
-			<div className="mb-8">
-				<h1 className="text-2xl font-semibold">Perfil</h1>
-			</div>
-
-			<ProfileCards employee={employee} />
-
-		</div>
+		employee ? (
+			<Container>
+				<div className="mb-8">
+					<h1 className="text-2xl font-semibold text-slate-700">Perfil</h1>
+					<Separator className="w-[100px] h-1 rounded-md bg-gradient-to-r to-[#FF9B44] from-[#FC6075]" />
+				</div>
+				<ProfileCards employee={employee} />
+			</Container>
+		) : (
+			<Loading />
+		)
 	)
 }
 

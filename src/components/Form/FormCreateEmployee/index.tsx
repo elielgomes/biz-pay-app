@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import { IEmployeeDTO, IHumanSexCodes, IMaritalStatus, IPermitions, IRole, IStatus } from "@/interfaces";
 import { nationalities } from "@/resources/nationalities";
 import { humanSexCodes } from "@/resources/humanSexCodes";
+import { maritalStatus } from "@/resources/maritalStatus";
 
 // Components
 import { Separator } from "@/components/ui/separator"
@@ -42,6 +43,7 @@ import { Calendar } from "@/components/ui/calendar";
 import MaskInput from "@/components/MaskInput";
 import { ICreateEmployee } from "@/app/dashboard/funcionarios/page";
 import { IHandleEmployeeEdit } from "@/components/Modal/ModalCreateEmployee";
+import { converStringToDate } from "@/lib/formatDate";
 
 interface IProps {
 	createEmployee?: ({ employee, callBack }: ICreateEmployee) => void;
@@ -53,9 +55,9 @@ export type TCreateEmployeeForm = z.infer<typeof createEmployeeFormSchema>;
 const createEmployeeFormSchema = z.object({
 	name: z.string({
 		required_error: "O Nome é obrigatório.",
-	}).min(2, {
+	}).toLowerCase().min(2, {
 		message: "O Nome deve conter no mínimo 2 caracteres.",
-	}),
+	}).transform(name => name.split(" ").map((word) => word.substring(0, 1).toUpperCase() + word.substring(1)).join(" ")),
 	email: z.string({
 		required_error: "O E-mail é obrigatório.",
 	}).email({
@@ -87,15 +89,15 @@ const createEmployeeFormSchema = z.object({
 	}).min(8, {
 		message: "A senha deve conter no minimo 8 caracteres.",
 	}),
-	dateOfBirth: z.date({
+	dateOfBirth: z.string({
 		required_error: "A data de nascimento é obrigatória.",
-	}).max(new Date(), {
-		message: "A data de nascimento não pode ser futura.",
+	}).min(1, {
+		message: "A data de nascimento é obrigatória.",
 	}),
 	nationality: z.string({
 		required_error: "A nacionalidade é obrigatória.",
 	}).min(1, {
-		message: "Nacionality must be at least 1 characters.",
+		message: "A nacionalidade é obrigatória.",
 	}),
 	numberOfChildren: z.number().min(0, {
 		message: "Número de filhos inválido.",
@@ -108,7 +110,11 @@ const createEmployeeFormSchema = z.object({
 		message: "Estado civil inválido.",
 		path: ["maritalStatus"],
 	}),
-	address: z.string().optional(),
+	address: z.string({
+		required_error: "O Endereço é obrigatório.",
+	}).min(1, {
+		message: "O Endereço é obrigatório.",
+	}),
 	sex: z.nativeEnum(IHumanSexCodes, {
 		required_error: "O Sexo é obrigatório.",
 	}).refine((value) => {
@@ -117,16 +123,10 @@ const createEmployeeFormSchema = z.object({
 		message: "Sexo é inválido.",
 		path: ["sex"],
 	}),
-	hourlyPayment: z.string({
-		required_error: "O Salário é obrigatório.",
-	}).trim().refine(value => {
-		return Number(value.replace(",", ".")) > 0
-	}, {
-		message: "O valor deve ser maior que R$ 00,00.",
-	}),
-	admissionDate: z.date({
+	admissionDate: z.string({
 		required_error: "A data de admissão é obrigatória.",
 	}),
+	terminationDate: z.string().optional(),
 	role: z.string({
 		required_error: "O Cargo é obrigatório.",
 	}).min(1, {
@@ -152,20 +152,14 @@ const createEmployeeFormSchema = z.object({
 		path: ["confirmPassword"],
 	});
 
-const maritalStatus = [
-	{ label: "Solteiro", value: IMaritalStatus.single },
-	{ label: "Casado", value: IMaritalStatus.married },
-	{ label: "Separado", value: IMaritalStatus.separated },
-	{ label: "Divorciado", value: IMaritalStatus.divorced },
-	{ label: "Viúvo", value: IMaritalStatus.widowed },
-] as const;
-
 const permitions = [
 	{ label: "Usuário", value: IPermitions.user },
 	{ label: "Administrador", value: IPermitions.admin },
 ] as const;
 
 export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmployeeEdit }) => {
+
+	const formRef = React.useRef<HTMLFormElement>(null);
 
 	let defaultEmployee = handleEmployeeEdit?.employee;
 
@@ -180,14 +174,14 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 				phone: employee.phoneNumber,
 				password: employee.password,
 				confirmPassword: employee.password,
-				dateOfBirth: new Date(employee.dateOfBirth),
+				dateOfBirth: new Date(employee.dateOfBirth).toLocaleDateString("pt-br"),
 				nationality: employee.nationality,
 				numberOfChildren: employee.numberOfChildren,
 				maritalStatus: employee.maritalStatus,
 				address: employee.address,
 				sex: employee.sex,
-				hourlyPayment: employee.hourlyPayment.toString().replace(".", ","),
-				admissionDate: new Date(employee.admissionDate),
+				admissionDate: new Date(employee.admissionDate).toLocaleDateString("pt-br"),
+				terminationDate: employee.terminationDate ? new Date(employee.terminationDate).toLocaleDateString("pt-br") : undefined,
 				role: employee.roleId,
 				permition: employee.permitionId,
 				bankName: employee.bankName,
@@ -205,14 +199,15 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 				phone: "",
 				password: "",
 				confirmPassword: "",
-				dateOfBirth: new Date(),
+				dateOfBirth: new Date().toLocaleDateString("pt-br"),
 				nationality: "Brasileira(o)",
 				numberOfChildren: 0,
 				maritalStatus: undefined,
 				address: "",
 				sex: undefined,
 				hourlyPayment: "",
-				admissionDate: new Date(),
+				admissionDate: new Date().toLocaleDateString("pt-br"),
+				terminationDate: undefined,
 				role: undefined,
 				permition: undefined,
 				bankName: "",
@@ -250,21 +245,20 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 		}
 	}, [roles]);
 
-	const onSubmit = (data: TCreateEmployeeForm) => {
+	const onSubmit = React.useCallback((data: TCreateEmployeeForm) => {
 		const newEmployee: IEmployeeDTO = {
 			cpf: data.cpf,
 			name: data.name,
-			status: IStatus.Ativo,
-			dateOfBirth: new Date(data.dateOfBirth),
+			status: data.terminationDate ? IStatus.Inativo : IStatus.Ativo,
+			dateOfBirth: converStringToDate(data.dateOfBirth),
 			email: data.email,
 			phoneNumber: data.phone,
 			cellNumber: data.cellPhone,
 			address: data.address,
 			sex: data.sex,
 			password: data.password,
-			hourlyPayment: Number(data.hourlyPayment.replace(",", ".")),
-			admissionDate: new Date(data.admissionDate),
-			terminationDate: undefined,
+			admissionDate: converStringToDate(data.admissionDate),
+			terminationDate: data.terminationDate ? converStringToDate(data.terminationDate) : undefined,
 			rg: data.rg,
 			nationality: data.nationality,
 			maritalStatus: data.maritalStatus,
@@ -282,11 +276,26 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 		} else {
 			createEmployee && createEmployee({ employee: newEmployee, callBack: resetAllFields });
 		}
-	};
+	}, [createEmployee, defaultEmployee, form, formDefaultValues, handleEmployeeEdit, resetAllFields]);
 
 	React.useEffect(() => {
+
+		const handleKeyPress = (event: KeyboardEvent) => {
+			if (event.key === "Enter") {
+				const submit = new Event("submit", { cancelable: true, bubbles: true });
+				submit.preventDefault();
+				formRef.current?.dispatchEvent(submit);
+			}
+		};
+
 		getAllRoles();
-	}, [getAllRoles]);
+
+		document.addEventListener("keypress", handleKeyPress);
+
+		return () => {
+			document.removeEventListener("keypress", handleKeyPress);
+		}
+	}, [getAllRoles, form, onSubmit]);
 
 	return (
 		<>
@@ -294,8 +303,8 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
 					<div>
-						<h2 className="text-center text-slate-900 font-semibold">Informações pessoais</h2>
-						<Separator className="my-3" />
+						<h2 className="text-center text-slate-700 font-semibold">Informações pessoais</h2>
+						<Separator className="my-3 bg-gradient-to-r to-[#FF9B44] from-[#FC6075]" />
 					</div>
 
 					{/* Nome / E-mail */}
@@ -305,7 +314,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="name"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Nome *</FormLabel>
+									<FormLabel>Nome <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<Input placeholder="Digite o nome" {...field} />
 									</FormControl>
@@ -318,7 +327,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="email"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>E-mail *</FormLabel>
+									<FormLabel>E-mail <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<Input placeholder="example@example.com" {...field} />
 									</FormControl>
@@ -335,7 +344,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="rg"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Rg *</FormLabel>
+									<FormLabel>Rg <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<MaskInput
 											onBlur={field.onBlur}
@@ -358,7 +367,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="cpf"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Cpf *</FormLabel>
+									<FormLabel>Cpf <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<MaskInput
 											type="string"
@@ -385,7 +394,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="cellPhone"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Celular *</FormLabel>
+									<FormLabel>Celular <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<MaskInput
 											onBlur={field.onBlur}
@@ -436,7 +445,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="password"
 							render={({ field }) => (
 								<FormItem className="w-1/2">
-									<FormLabel>Senha *</FormLabel>
+									<FormLabel>Senha <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<Input placeholder="No mínimo 8 caracteres" {...field} />
 									</FormControl>
@@ -450,7 +459,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="confirmPassword"
 							render={({ field }) => (
 								<FormItem className="w-1/2">
-									<FormLabel>Confirme a senha *</FormLabel>
+									<FormLabel>Confirme a senha <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<Input placeholder="Confirme a senha" {...field} />
 									</FormControl>
@@ -467,38 +476,18 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="dateOfBirth"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Data de nascimento *</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant={"outline"}
-													className={cn(
-														"w-full pl-3 text-left font-normal",
-														!field.value && "text-muted-foreground"
-													)}
-												>
-													{field.value ? (
-														format(field.value, "PPP")
-													) : (
-														<span>Selecione a data</span>
-													)}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={field.value}
-												onSelect={field.onChange}
-												disabled={(date) =>
-													date > new Date() || date < new Date("1900-01-01")
-												}
-												initialFocus
-											/>
-										</PopoverContent>
-									</Popover>
+									<FormLabel>Data de nascimento <span className="text-red-500">*</span></FormLabel>
+									<MaskInput
+										type="string"
+										onBlur={field.onBlur}
+										inputRef={field.ref}
+										disabled={field.disabled}
+										name={field.name}
+										value={field.value}
+										onAccept={field.onChange}
+										mask="00/00/0000"
+										placeholder="00/00/0000"
+									/>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -509,7 +498,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="nationality"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Nacionalidade *</FormLabel>
+									<FormLabel>Nacionalidade <span className="text-red-500">*</span></FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -587,7 +576,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="maritalStatus"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Estado civil *</FormLabel>
+									<FormLabel>Estado civil <span className="text-red-500">*</span></FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -648,7 +637,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="address"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Endereço</FormLabel>
+									<FormLabel>Endereço <span className="text-red-500">*</span></FormLabel>
 									<FormControl>
 										<Input placeholder="Digite o endereço" {...field} />
 									</FormControl>
@@ -662,7 +651,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="sex"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Sexo *</FormLabel>
+									<FormLabel>Sexo <span className="text-red-500">*</span></FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -716,30 +705,25 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 						/>
 					</div>
 
-					{/* Salario hora / Data de admissao */}
+					{/* Data de admissao / Data de desligamento */}
 					<div className="flex w-full gap-5">
 						<FormField
 							control={form.control}
-							name="hourlyPayment"
+							name="admissionDate"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Salário (valor/hora) *</FormLabel>
-									<FormControl>
-										<div className="relative">
-											<MaskInput
-												onBlur={field.onBlur}
-												inputRef={field.ref}
-												disabled={field.disabled}
-												name={field.name}
-												value={field.value}
-												onAccept={field.onChange}
-												mask="00,00"
-												placeholder="00,00"
-												className="pl-8"
-											/>
-											<span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-500 font-semibold">R$</span>
-										</div>
-									</FormControl>
+									<FormLabel>Data de admissão</FormLabel>
+									<MaskInput
+										type="string"
+										onBlur={field.onBlur}
+										inputRef={field.ref}
+										disabled={field.disabled}
+										name={field.name}
+										value={field.value}
+										onAccept={field.onChange}
+										mask="00/00/0000"
+										placeholder="00/00/0000"
+									/>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -747,39 +731,21 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 
 						<FormField
 							control={form.control}
-							name="admissionDate"
+							name="terminationDate"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Data de admissão</FormLabel>
-									<Popover>
-										<PopoverTrigger asChild>
-											<FormControl>
-												<Button
-													variant={"outline"}
-													className={cn(
-														"w-full pl-3 text-left font-normal",
-														!field.value && "text-muted-foreground"
-													)}
-												>
-													{field.value ? (
-														format(field.value, "PPP")
-													) : (
-														<span>Selecione a data</span>
-													)}
-													<CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-												</Button>
-											</FormControl>
-										</PopoverTrigger>
-										<PopoverContent className="w-auto p-0" align="start">
-											<Calendar
-												mode="single"
-												selected={field.value}
-												onSelect={field.onChange}
-												disabled={(date) => date < new Date("1900-01-01")}
-											//initialFocus
-											/>
-										</PopoverContent>
-									</Popover>
+									<FormLabel>Data de desligamento</FormLabel>
+									<MaskInput
+										type="string"
+										onBlur={field.onBlur}
+										inputRef={field.ref}
+										disabled={field.disabled}
+										name={field.name}
+										value={field.value}
+										onAccept={field.onChange}
+										mask="00/00/0000"
+										placeholder="00/00/0000"
+									/>
 									<FormMessage />
 								</FormItem>
 							)}
@@ -794,7 +760,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="role"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Cargo *</FormLabel>
+									<FormLabel>Cargo <span className="text-red-500">*</span></FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -862,7 +828,7 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 							name="permition"
 							render={({ field }) => (
 								<FormItem className="w-1/2 flex flex-col space-y-3 justify-start">
-									<FormLabel>Permissão *</FormLabel>
+									<FormLabel>Permissão <span className="text-red-500">*</span></FormLabel>
 									<Popover>
 										<PopoverTrigger asChild>
 											<FormControl>
@@ -920,8 +886,8 @@ export const FormCreateEmployee: React.FC<IProps> = ({ createEmployee, handleEmp
 					</div>
 
 					<div>
-						<h2 className="text-center text-slate-900 font-semibold">Informações bancárias</h2>
-						<Separator className="my-3" />
+						<h2 className="text-center text-slate-700 font-semibold">Informações bancárias</h2>
+						<Separator className="my-3 bg-gradient-to-r to-[#FF9B44] from-[#FC6075]" />
 					</div>
 
 					{/* Nome do banco / Numero da conta */}

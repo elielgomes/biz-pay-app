@@ -50,6 +50,19 @@ export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 			router.push("/dashboard/perfil");
 		};
 
+		if (pathName === `/dashboard/perfil/detalhes`
+			&& user.permitionId !== IPermitions.admin) {
+			router.push("/dashboard/perfil");
+		};
+
+		if (pathName === "/dashboard" && user.permitionId !== IPermitions.admin) {
+			router.push("/dashboard/perfil");
+		};
+
+		if (pathName === "/dashboard/funcionarios" && user.permitionId !== IPermitions.admin) {
+			router.push("/dashboard/perfil");
+		}
+
 	}, [pathName, router, params.cpf]);
 
 	const recoverUserInfo = useCallback(async () => {
@@ -94,7 +107,7 @@ export const AuthProvider: React.FC<IAuthProvider> = ({ children }) => {
 	}
 
 	const signOut = () => {
-		destroyCookie(undefined, 'bizpay.token');
+		destroyCookie(null, 'bizpay.token', { path: '/' });
 		router.push("/");
 		window.location.reload();
 	}
